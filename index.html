@@ -17,6 +17,9 @@
             color: white;
             padding: 10px 20px;
             text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         #searchBar {
@@ -116,19 +119,33 @@
             background-color: #ccc;
             cursor: not-allowed;
         }
+
+        .header-buttons {
+            display: flex;
+            align-items: center;
+        }
+
+        .header-buttons button {
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
     <header>
-        <h1>DES Haber'e Hoş Geldiniz!</h1>
-        <h2>Size nasıl yardımcı olabiliriz?</h2>
-        <input type="text" id="searchBar" placeholder="Haber ara...">
-        <div id="languageButtons">
-            <button class="lang-btn" data-lang="en">English</button>
-            <button class="lang-btn" data-lang="tr">Türkçe</button>
+        <div>
+            <h1>DES Haber'e Hoş Geldiniz!</h1>
+            <h2>Size nasıl yardımcı olabiliriz?</h2>
         </div>
-        <button id="loginButton">Login</button>
-        <button id="savedNewsButton" style="display:none;">Saved News</button>
+        <div class="header-buttons">
+            <input type="text" id="searchBar" placeholder="Haber ara...">
+            <div id="languageButtons">
+                <button class="lang-btn" data-lang="en">English</button>
+                <button class="lang-btn" data-lang="tr">Türkçe</button>
+            </div>
+            <button id="loginButton">Login</button>
+            <button id="logoutButton" style="display:none;">Logout</button>
+            <button id="savedNewsButton" style="display:none;">Saved News</button>
+        </div>
     </header>
     <main id="newsContainer"></main>
     <div id="pagination">
@@ -144,18 +161,17 @@
             const prevPageBtn = document.getElementById('prevPageBtn');
             const nextPageBtn = document.getElementById('nextPageBtn');
             const loginButton = document.getElementById('loginButton');
+            const logoutButton = document.getElementById('logoutButton');
             const savedNewsButton = document.getElementById('savedNewsButton');
             let newsData = [];
             let currentPage = 1;
             const itemsPerPage = 20;
             let currentLanguage = 'en';
 
-            const cognitoDomain = 'https://news-user-pool.auth.eu-north-1.amazoncognito.com'; // Replace with your Cognito domain
-            const clientId = '495tocrjev78h7sf7jcimiej8f'; // Replace with your App Client ID
-            const redirectUri =  'https://lyaelim.github.io/newsws/';
+            const redirectUri = 'https://yourusername.github.io/yourrepository';
+            const loginUrl = `https://news-user-pool.auth.eu-north-1.amazoncognito.com/oauth2/authorize?response_type=code&client_id=495tocrjev78h7sf7jcimiej8f&redirect_uri=${redirectUri}`;
 
             loginButton.addEventListener('click', () => {
-                const loginUrl = `https://news-user-pool.auth.eu-north-1.amazoncognito.com/oauth2/authorize?response_type=code&client_id=495tocrjev78h7sf7jcimiej8f&redirect_uri=https://lyaelim.github.io/newsws/`;
                 window.location.href = loginUrl;
             });
 
@@ -169,8 +185,17 @@
             if (result.id_token) {
                 sessionStorage.setItem('id_token', result.id_token);
                 loginButton.style.display = 'none';
+                logoutButton.style.display = 'inline-block';
                 savedNewsButton.style.display = 'inline-block';
             }
+
+            logoutButton.addEventListener('click', () => {
+                sessionStorage.removeItem('id_token');
+                loginButton.style.display = 'inline-block';
+                logoutButton.style.display = 'none';
+                savedNewsButton.style.display = 'none';
+                window.location.href = redirectUri;
+            });
 
             savedNewsButton.addEventListener('click', () => {
                 fetchSavedNews();
