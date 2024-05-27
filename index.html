@@ -241,7 +241,7 @@
 
             async function fetchNews(query = '', language = 'en') {
                 const apiKey = '042b9d95e30f4effaa2586cb3186fbf2';
-                const url = `https://newsapi.org/v2/everything?q=${query}&language=${language}&apiKey=${apiKey}`;
+                const url = `https://newsapi.org/v2/everything?q=${query}&language=${language}&apiKey=042b9d95e30f4effaa2586cb3186fbf2`;
                 const response = await fetch(url);
                 const data = await response.json();
                 return data.articles;
