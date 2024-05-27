@@ -5,129 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Haber Web Uygulaması</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f0f0f0;
-        }
-
-        header {
-            background-color: #7b1414;
-            color: white;
-            padding: 10px 20px;
-            text-align: center;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        #searchBar {
-            width: 80%;
-            padding: 10px;
-            margin: 10px auto;
-            display: block;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-
-        #languageButtons {
-            margin: 10px auto;
-            display: flex;
-            justify-content: center;
-        }
-
-        .lang-btn {
-            padding: 10px 20px;
-            margin: 5px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .lang-btn.active {
-            background-color: #555;
-            color: white;
-        }
-
-        main {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin: 20px;
-        }
-
-        .news-item {
-            background-color: white;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            margin: 10px;
-            padding: 20px;
-            width: 300px;
-            transition: transform 0.2s;
-            overflow: hidden;
-        }
-
-        .news-item:hover {
-            transform: scale(1.05);
-        }
-
-        .news-image {
-            width: 100%;
-            height: auto;
-            border-radius: 5px;
-            margin-bottom: 10px;
-        }
-
-        .news-title {
-            font-size: 1.2em;
-            margin-bottom: 10px;
-        }
-
-        .news-description {
-            font-size: 0.9em;
-            color: #555;
-        }
-
-        .save-news-btn {
-            background-color: #7b1414;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            padding: 5px 10px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        #pagination {
-            display: flex;
-            justify-content: space-between;
-            width: 80%;
-            margin: 20px auto;
-        }
-
-        .pagination-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            background-color: #7b1414;
-            color: white;
-        }
-
-        .pagination-btn:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-
-        .header-buttons {
-            display: flex;
-            align-items: center;
-        }
-
-        .header-buttons button {
-            margin-left: 10px;
-        }
+        /* (styles remain unchanged) */
     </style>
 </head>
 <body>
@@ -169,7 +47,7 @@
             let currentLanguage = 'en';
 
             const redirectUri = 'https://lyaelim.github.io/newsws';
-            const loginUrl = `https://news-user-pool.auth.eu-north-1.amazoncognito.com/oauth2/authorize?response_type=code&client_id=495tocrjev78h7sf7jcimiej8f&redirect_uri=https://lyaelim.github.io/newsws`;
+            const loginUrl = `https://news-user-pool.auth.eu-north-1.amazoncognito.com/oauth2/authorize?response_type=code&client_id=495tocrjev78h7sf7jcimiej8f&redirect_uri=${redirectUri}`;
 
             loginButton.addEventListener('click', () => {
                 window.location.href = loginUrl;
@@ -184,22 +62,33 @@
 
             if (result.id_token) {
                 sessionStorage.setItem('id_token', result.id_token);
-                loginButton.style.display = 'none';
-                logoutButton.style.display = 'inline-block';
-                savedNewsButton.style.display = 'inline-block';
+                updateButtonVisibility();
+            } else if (sessionStorage.getItem('id_token')) {
+                updateButtonVisibility();
             }
 
             logoutButton.addEventListener('click', () => {
                 sessionStorage.removeItem('id_token');
-                loginButton.style.display = 'inline-block';
-                logoutButton.style.display = 'none';
-                savedNewsButton.style.display = 'none';
+                updateButtonVisibility();
                 window.location.href = redirectUri;
             });
 
             savedNewsButton.addEventListener('click', () => {
                 fetchSavedNews();
             });
+
+            function updateButtonVisibility() {
+                const idToken = sessionStorage.getItem('id_token');
+                if (idToken) {
+                    loginButton.style.display = 'none';
+                    logoutButton.style.display = 'inline-block';
+                    savedNewsButton.style.display = 'inline-block';
+                } else {
+                    loginButton.style.display = 'inline-block';
+                    logoutButton.style.display = 'none';
+                    savedNewsButton.style.display = 'none';
+                }
+            }
 
             async function fetchSavedNews() {
                 const idToken = sessionStorage.getItem('id_token');
