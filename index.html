@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Haber Web Uygulaması</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+
+        header {
+            background-color: #7b1414;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+        }
+
+        #searchBar {
+            width: 80%;
+            padding: 10px;
+            margin: 10px auto;
+            display: block;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        #languageButtons {
+            margin: 10px auto;
+            display: flex;
+            justify-content: center;
+        }
+
+        .lang-btn {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .lang-btn.active {
+            background-color: #555;
+            color: white;
+        }
+
+        main {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 20px;
+        }
+
+        .news-item {
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin: 10px;
+            padding: 20px;
+            width: 300px;
+            transition: transform 0.2s;
+            overflow: hidden;
+        }
+
+        .news-item:hover {
+            transform: scale(1.05);
+        }
+
+        .news-image {
+            width: 100%;
+            height: auto;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .news-title {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .news-description {
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        .save-news-btn {
+            background-color: #7b1414;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        #pagination {
+            display: flex;
+            justify-content: space-between;
+            width: 80%;
+            margin: 20px auto;
+        }
+
+        .pagination-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #7b1414;
+            color: white;
+        }
+
+        .pagination-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>DES Haber'e Hoş Geldiniz!</h1>
+        <h2>Size nasıl yardımcı olabiliriz?</h2>
+        <input type="text" id="searchBar" placeholder="Haber ara...">
+        <div id="languageButtons">
+            <button class="lang-btn" data-lang="en">English</button>
+            <button class="lang-btn" data-lang="tr">Türkçe</button>
+        </div>
+        <button id="loginButton">Login</button>
+        <button id="savedNewsButton" style="display:none;">Saved News</button>
+    </header>
+    <main id="newsContainer"></main>
+    <div id="pagination">
+        <button class="pagination-btn" id="prevPageBtn" disabled>Önceki Sayfa</button>
+        <button class="pagination-btn" id="nextPageBtn" disabled>Sonraki Sayfa</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const newsContainer = document.getElementById('newsContainer');
+            const searchBar = document.getElementById('searchBar');
+            const languageButtons = document.querySelectorAll('.lang-btn');
+            const prevPageBtn = document.getElementById('prevPageBtn');
+            const nextPageBtn = document.getElementById('nextPageBtn');
+            const loginButton = document.getElementById('loginButton');
+            const savedNewsButton = document.getElementById('savedNewsButton');
+            let newsData = [];
+            let currentPage = 1;
+            const itemsPerPage = 20;
+            let currentLanguage = 'en';
+
+            const cognitoDomain = 'https://news-user-pool.auth.eu-north-1.amazoncognito.com'; // Replace with your Cognito domain
+            const clientId = '495tocrjev78h7sf7jcimiej8f'; // Replace with your App Client ID
+            const redirectUri = window.location.origin;
+
+            loginButton.addEventListener('click', () => {
+                const loginUrl = `https://news-user-pool.auth.eu-north-1.amazoncognito.com/oauth2/authorize?response_type=code&client_id=495tocrjev78h7sf7jcimiej8f&redirect_uri=http://localhost`;
+                window.location.href = loginUrl;
+            });
+
+            const hash = window.location.hash.substr(1);
+            const result = hash.split('&').reduce((res, item) => {
+                const parts = item.split('=');
+                res[parts[0]] = parts[1];
+                return res;
+            }, {});
+
+            if (result.id_token) {
+                sessionStorage.setItem('id_token', result.id_token);
+                loginButton.style.display = 'none';
+                savedNewsButton.style.display = 'inline-block';
+            }
+
+            savedNewsButton.addEventListener('click', () => {
+                fetchSavedNews();
+            });
+
+            async function fetchSavedNews() {
+                const idToken = sessionStorage.getItem('id_token');
+                const response = await fetch('/get-saved-news', {
+                    method: 'GET',
+                    headers: {
+                        Authorization: `Bearer ${idToken}`
+                    }
+                });
+                const savedNews = await response.json();
+                displaySavedNews(savedNews);
+            }
+
+            function displaySavedNews(news) {
+                newsContainer.innerHTML = '';
+                news.forEach(item => {
+                    const newsItem = document.createElement('div');
+                    newsItem.className = 'news-item';
+                    newsItem.innerHTML = `
+                        <img class="news-image" src="${item.urlToImage}" alt="${item.title}" onerror="this.onerror=null;this.src='koyusiyah.jpg';">
+                        <h2 class="news-title">${item.title}</h2>
+                        <p class="news-description">${item.description}</p>
+                    `;
+                    newsItem.addEventListener('click', () => {
+                        window.open(item.url, '_blank');
+                    });
+                    newsContainer.appendChild(newsItem);
+                });
+            }
+
+            languageButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    currentLanguage = button.getAttribute('data-lang');
+                    languageButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    displayNews(searchBar.value);
+                });
+            });
+
+            async function fetchNews(query = '', language = 'en') {
+                const apiKey = '042b9d95e30f4effaa2586cb3186fbf2';
+                const url = `https://newsapi.org/v2/everything?q=${query}&language=${language}&apiKey=${apiKey}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                return data.articles;
+            }
+
+            async function displayNews(query = '') {
+                newsData = await fetchNews(query, currentLanguage);
+                currentPage = 1;
+                updatePagination();
+                renderNews();
+            }
+
+            function renderNews() {
+                newsContainer.innerHTML = '';
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const endIndex = startIndex + itemsPerPage;
+                const paginatedNews = newsData.slice(startIndex, endIndex);
+                paginatedNews.forEach(item => {
+                    const newsItem = document.createElement('div');
+                    newsItem.className = 'news-item';
+                    newsItem.innerHTML = `
+                        <img class="news-image" src="${item.urlToImage}" alt="${item.title}" onerror="this.onerror=null;this.src='koyusiyah.jpg';">
+                        <h2 class="news-title">${item.title}</h2>
+                        <p class="news-description">${item.description}</p>
+                        <button class="save-news-btn">Save</button>
+                    `;
+                    newsItem.addEventListener('click', (e) => {
+                        if (e.target.classList.contains('save-news-btn')) {
+                            saveNews(item);
+                        } else {
+                            window.open(item.url, '_blank');
+                        }
+                    });
+                    newsContainer.appendChild(newsItem);
+                });
+                updatePagination();
+            }
+
+            async function saveNews(newsItem) {
+                const idToken = sessionStorage.getItem('id_token');
+                await fetch('/save-news', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${idToken}`
+                    },
+                    body: JSON.stringify(newsItem)
+                });
+            }
+
+            function updatePagination() {
+                prevPageBtn.disabled = currentPage === 1;
+                nextPageBtn.disabled = currentPage * itemsPerPage >= newsData.length;
+            }
+
+            searchBar.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                displayNews(searchTerm);
+            });
+
+            prevPageBtn.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderNews();
+                }
+            });
+
+            nextPageBtn.addEventListener('click', () => {
+                if (currentPage * itemsPerPage < newsData.length) {
+                    currentPage++;
+                    renderNews();
+                }
+            });
+
+            displayNews();
+            document.querySelector('.lang-btn[data-lang="en"]').classList.add('active');
+        });
+    </script>
+</body>
+</html>
